@@ -1,61 +1,76 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dummy_project/model/notes/notes.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final notesProvider = StateNotifierProvider<NotesNotifier, List<Notes>>(
-    (ref) => NotesNotifier(ref));
+  (ref) => NotesNotifier(ref),
+);
 
-final reviewDurationinMins = StateProvider((ref) => 5);
+final reviewDurationProvider = StateProvider((ref) => 5);
 
 class NotesNotifier extends StateNotifier<List<Notes>> {
   Ref ref;
-  final notesList = NotesList();
+  NotesNotifier(this.ref) : super([]) {
+    getAllNotes();
+  }
 
-  NotesNotifier(this.ref) : super([]);
-
-  void addToNotes(Notes notes) {
-    final durationProvider = ref.read(reviewDurationinMins);
-    Duration defaultReviewDuration = Duration(minutes: durationProvider);
-
-    notesList.list.add(Notes(
-      id: notes.id,
-      title: notes.title,
-      content: notes.content,
+  void addNote(String title, String content) {
+    final duration = ref.read(reviewDurationProvider);
+    final defaultReviewDuration = Duration(minutes: duration);
+    final newNote = Notes(
+      id: generateNoteId(),
+      title: title,
+      content: content,
       reviewInterval: defaultReviewDuration,
-    ));
-
-    state = notesList.list;
-  }
-
-  void removeToNotes(int id) {
-    state.removeWhere((e) => e.id == id);
-  }
-
-  int generateNotesId() {
-    final id = Random().nextInt(10000);
-    return id;
-  }
-
-  Notes getNotes(int id) {
-    return state.firstWhere(
-      (element) => element.id == id,
-    );
-  }
-
-  Notes editNotes(int id, String? title, String? content) {
-    Notes note = state.firstWhere(
-      (element) => element.id == id,
     );
 
-    if (content != null) note.content = content;
-
-    if (title != null) note.title = title;
-
-    return note;
+    state = [...state, newNote];
+    saveNotes();
   }
 
-  List<Notes> getAllNotes() {
-    return notesList.list;
+  void removeNote(int id) {
+    state = state.where((note) => note.id != id).toList();
+    saveNotes();
+  }
+
+  int generateNoteId() {
+    return Random().nextInt(10000);
+  }
+
+  Notes getNoteById(int id) {
+    return state.firstWhere((note) => note.id == id);
+  }
+
+  void editNote(int id, {String? title, String? content}) {
+    state = state.map((note) {
+      if (note.id == id) {
+        return note.copyWith(
+          title: title ?? note.title,
+          content: content ?? note.content,
+        );
+      }
+      return note;
+    }).toList();
+    saveNotes();
+  }
+
+  Future<void> getAllNotes() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? notesString = prefs.getString('notes');
+    if (notesString != null) {
+      state = (json.decode(notesString) as List)
+          .map((noteJson) => Notes.fromJson(noteJson))
+          .toList();
+    }
+  }
+
+  Future<void> saveNotes() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String notesString =
+        json.encode(state.map((note) => note.toJson()).toList());
+    await prefs.setString('notes', notesString);
   }
 }

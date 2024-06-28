@@ -26,7 +26,7 @@ class _NotesListState extends ConsumerState<NotesList> {
           notes: notes,
           onDelete: () {
             setState(() {
-              notesNotifier.removeToNotes(notes.id);
+              notesNotifier.removeNote(notes.id);
             });
           },
           onTap: () {

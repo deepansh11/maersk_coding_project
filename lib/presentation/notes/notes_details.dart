@@ -21,7 +21,7 @@ class _NotesDetailsState extends ConsumerState<NotesDetails> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    notes = ref.read(notesProvider.notifier).getNotes(widget.id);
+    notes = ref.read(notesProvider.notifier).getNoteById(widget.id);
   }
 
   @override

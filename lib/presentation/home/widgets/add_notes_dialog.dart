@@ -53,17 +53,13 @@ class _AddNotesState extends ConsumerState<AddNotes> {
           ElevatedButton(
               onPressed: widget.isForEdit
                   ? () {
-                      notesNotifier.editNotes(widget.notes?.id ?? 0,
-                          _titleController.text, _contentController.text);
+                      notesNotifier.editNote(widget.notes?.id ?? 0,
+                          title: _titleController.text,
+                          content: _contentController.text);
                     }
                   : () {
-                      notesNotifier.addToNotes(
-                        Notes(
-                          id: notesNotifier.generateNotesId(),
-                          title: _titleController.text,
-                          content: _contentController.text,
-                        ),
-                      );
+                      notesNotifier.addNote(
+                          _titleController.text, _contentController.text);
 
                       Navigator.of(context).pop();
                     },
